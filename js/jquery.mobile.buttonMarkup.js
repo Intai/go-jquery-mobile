@@ -233,10 +233,12 @@ var attachEvents = function() {
 
 				if ( evt === "vmousedown" ) {
 					if ( isTouchEvent ) {
+						// Grabone Modified
+						// to disable touch highlight.
 						// Use a short delay to determine if the user is scrolling before highlighting
-						hov = setTimeout( function() {
+						/*hov = setTimeout( function() {
 							updateButtonClass( $btn, "ui-btn-up-" + theme, "ui-btn-down-" + theme, undefined, "down" );
-						}, hoverDelay );
+						}, hoverDelay );*/
 					} else {
 						updateButtonClass( $btn, "ui-btn-up-" + theme, "ui-btn-down-" + theme, undefined, "down" );
 					}
@@ -244,21 +246,25 @@ var attachEvents = function() {
 					updateButtonClass( $btn, "ui-btn-down-" + theme, "ui-btn-up-" + theme, undefined, "up" );
 				} else if ( evt === "vmouseover" || evt === "focus" ) {
 					if ( isTouchEvent ) {
+                                                // Grabone Modified
+                                                // to disable touch highlight.
 						// Use a short delay to determine if the user is scrolling before highlighting
-						foc = setTimeout( function() {
+						/*foc = setTimeout( function() {
 							updateButtonClass( $btn, "ui-btn-up-" + theme, "ui-btn-hover-" + theme, true, "" );
-						}, hoverDelay );
+						}, hoverDelay );*/
 					} else {
 						updateButtonClass( $btn, "ui-btn-up-" + theme, "ui-btn-hover-" + theme, true, "" );
 					}
 				} else if ( evt === "vmouseout" || evt === "blur" || evt === "scrollstart" ) {
 					updateButtonClass( $btn, "ui-btn-hover-" + theme  + " ui-btn-down-" + theme, "ui-btn-up-" + theme, false, "up" );
-					if ( hov ) {
+					// Grabone Modified
+					// to disable touch highlight.
+					/*if ( hov ) {
 						clearTimeout( hov );
 					}
 					if ( foc ) {
 						clearTimeout( foc );
-					}
+					}*/
 				}
 			}
 		},

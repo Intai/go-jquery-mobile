@@ -555,7 +555,7 @@
 }
 .ui-btn-up-d:visited,
 .ui-btn-up-d a.ui-link-inherit {
-	color: 					#333 /*{d-bup-color}*/;
+	color: 					#2f3e46 /*{d-bup-color}*/;
 }
 .ui-btn-hover-d {
 	border: 1px solid 		#aaa /*{d-bhover-border}*/;
@@ -767,7 +767,7 @@ a.ui-link-inherit {
 	border: 1px solid 		#2373a5 /*{global-active-border}*/;
 	background: 			#5393c5 /*{global-active-background-color}*/;
 	font-weight: bold;
-	color: 					#fff /*{global-active-color}*/;
+	color: 					#754300 /*{global-active-color}*/;
 	cursor: pointer;
 	text-shadow: 0 /*{global-active-shadow-x}*/ 1px /*{global-active-shadow-y}*/ 0 /*{global-active-shadow-radius}*/ #3373a5 /*{global-active-shadow-color}*/;
 	text-decoration: none;
@@ -1054,7 +1054,7 @@ a.ui-link-inherit {
 }
 .ui-checkbox-on .ui-icon,
 .ui-radio-on .ui-icon {
-	background-color: #4596ce /*{global-active-background-color}*/; /* NOTE: this hex should match the active state color. It's repeated here for cascade */
+	background-color: #e49200 /*{global-active-background-color}*/; /* NOTE: this hex should match the active state color. It's repeated here for cascade */
 }
 
 /* loading icon */

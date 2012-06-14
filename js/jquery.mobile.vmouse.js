@@ -42,7 +42,9 @@ var dataPropertyName = "virtualMouseBindings",
 	lastTouchID = 0, threshold;
 
 $.vmouse = {
-	moveDistanceThreshold: 10,
+  // GrabOne Modified
+  // to reduce accidental hit.
+	moveDistanceThreshold: 5,
 	clickDistanceThreshold: 10,
 	resetTimerDuration: 1500
 };
@@ -192,9 +194,19 @@ function triggerVirtualEvent( eventType, event, flags ) {
 }
 
 function mouseEventCallback( event ) {
-	var touchID = $.data( event.target, touchTargetPropertyName );
+  // GrabOne Modified
+  // to avoid random clicks triggered by drag-and-hold on ios.
+  if (didScroll && $.mobile.isiOSApp && event.type == 'click') {
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    return;
+  }
+    
+	var touchID = $.data(event.target, touchTargetPropertyName);
 
-	if ( !blockMouseTriggers && ( !lastTouchID || lastTouchID !== touchID ) ) {
+	if ( !blockMouseTriggers && ( !lastTouchID || lastTouchID !== touchID ) ){
+
 		var ve = triggerVirtualEvent( "v" + event.type, event );
 		if ( ve ) {
 			if ( ve.isDefaultPrevented() ) {
@@ -307,7 +319,10 @@ function handleTouchEnd( event ) {
 		}
 	}
 	triggerVirtualEvent( "vmouseout", event, flags);
-	didScroll = false;
+  
+  // GrabOne Modified
+  // to avoid random clicks triggered by drag-and-hold on ios.
+  // didScroll = false;
 
 	startResetTimer();
 }
@@ -367,8 +382,8 @@ function getSpecialEventObject( eventType ) {
 
 				activeDocHandlers[ "touchstart" ] = ( activeDocHandlers[ "touchstart" ] || 0) + 1;
 
-				if ( activeDocHandlers[ "touchstart" ] === 1 ) {
-					$document.bind( "touchstart", handleTouchStart )
+				if (activeDocHandlers[ "touchstart" ] === 1) {
+					/*$document.bind( "touchstart", handleTouchStart )
 						.bind( "touchend", handleTouchEnd )
 
 						// On touch platforms, touching the screen and then dragging your finger
@@ -382,7 +397,14 @@ function getSpecialEventObject( eventType ) {
 						// or not a scroll happenens before the touchend event is fired.
 
 						.bind( "touchmove", handleTouchMove )
-						.bind( "scroll", handleScroll );
+						.bind( "scroll", handleScroll );*/
+            
+          // GrabOne Modified 
+          // to improve response time.
+          document.addEventListener('touchstart', handleTouchStart, false);
+          document.addEventListener('touchend', handleTouchEnd, false);
+          document.addEventListener('touchmove', handleTouchMove, false);
+          document.addEventListener('scroll', handleScroll, false);
 				}
 			}
 		},

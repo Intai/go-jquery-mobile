@@ -78,6 +78,11 @@ define( [
 		//urlHistory is purely here to make guesses at whether the back or forward button was clicked
 		//and provide an appropriate transition
 		urlHistory = $.mobile.navigate.history,
+    
+    // Grabone Modified
+    // to detect ios and android app.
+    isiOSApp = (/scroller/i).test(navigator.userAgent),
+    isAndroidApp = (/grabone.*android/i).test(navigator.userAgent),
 
 		//define first selector to receive focus when a page is shown
 		focusable = "[tabindex],a,button:visible,select:visible,input",
@@ -106,6 +111,14 @@ define( [
 
 		getScreenHeight = $.mobile.getScreenHeight;
 
+    // Grabone Modified
+    // to get ios app version.
+    var iOSAppVersion = 0;
+    var match = navigator.userAgent.match(/scroller\/(\d+)$/i);
+    if (match && match.length > 1) {
+      iOSAppVersion = match[1];
+    }
+    
 		//base element management, defined depending on dynamic base tag support
 		var base = $.support.dynamicBaseTag ? {
 
@@ -340,8 +353,23 @@ define( [
 
 	//history stack
 	$.mobile.urlHistory = urlHistory;
+  
+  // Grabone Modified
+  // to detect ios and android app.
+  $.mobile.isiOSApp = isiOSApp;
+  $.mobile.isAndroidApp = isAndroidApp;
+  
+  // Grabone Modified
+  // to get ios app version.
+  $.mobile.iOSAppVersion = iOSAppVersion;
 
 	$.mobile.dialogHashKey = dialogHashKey;
+
+  // Grabone Modified
+  // to get whether pages are transitioning.
+  $.mobile.isPageTransitionLocked = function(){
+    return isPageTransitioning;
+  };
 
 	//enable cross-domain page support
 	$.mobile.allowCrossDomainPages = false;
@@ -504,12 +532,33 @@ define( [
 			deferred.reject( absUrl, options );
 		} else {
 			// Load the new page.
-			$.ajax({
+      // GrabOne Modified
+      // to be able to abort the ajax request.
+			var xhr = $.ajax({
 				url: fileUrl,
 				type: settings.type,
 				data: settings.data,
 				dataType: "html",
+        // GrabOne Modified
+        // to distinguish between requesting a full-page and a partial.
+        entirePage: true,
+        // GrabOne Modified
+        // to ensure a fresh response from server.
+        headers: (settings.reloadPageServer) 
+                    ? {'If-None-Match':''} 
+                    : {}, //{'X-Requested-With':'XMLHttpRequest'}
 				success: function( html, textStatus, xhr ) {
+          // Grabone Modified
+          // to workaround the limitation on redirection with cross-domain ajax.
+          var matches = html.match(/^Location: (.*)/)
+          if (matches) {
+            delete options.type;
+            delete options.data;
+            releasePageTransitionLock();
+            $.mobile.changePage(matches[1], options);
+            return;
+          }
+          
 					//pre-parse html to check for a data-url,
 					//use it as the new fileUrl, base path, etc
 					var all = $( "<div></div>" ),
@@ -646,6 +695,10 @@ define( [
 					deferred.reject( absUrl, options );
 				}
 			});
+      
+      if (settings.xhr) {
+        $.mobile.xhr = xhr;
+      }
 		}
 
 		return deferred.promise();
@@ -753,6 +806,13 @@ define( [
 				});
 			return;
 		}
+    
+    // Grabone Modified
+    // to skip intermediate pages and transition only to the last.
+    if (pageTransitionQueue.length > 0) {
+      releasePageTransitionLock();
+      return;
+    }
 
 		// If we are going to the first-page of the application, we need to make
 		// sure settings.dataUrl is set to the application document url. This allows
@@ -808,6 +868,9 @@ define( [
 			historyDir = options.direction === "back" ? -1 : 1;
 		}
 
+                // Grabone Modified
+                // to reduce response time.
+                if (!isiOSApp) {
 		// Kill the keyboard.
 		// XXX_jblas: We need to stop crawling the entire document to kill focus. Instead,
 		//            we should be tracking focus with a delegate() handler so we already have
@@ -821,6 +884,7 @@ define( [
 				$( "input:focus, textarea:focus, select:focus" ).blur();
 			}
 		} catch( e ) {}
+                }
 
 		// Record whether we are at a place in history where a dialog used to be - if so, do not add a new history entry and do not change the hash either
 		var alreadyThere = false;
@@ -996,6 +1060,10 @@ define( [
 		var getAjaxFormData = function( $form, calculateOnly ) {
 			var type, target, url, ret = true, formData, vclickedName;
 			if ( !$.mobile.ajaxEnabled ||
+					// Grabone Modified
+					// to enable cross-domain ajax.
+					// (!$.mobile.allowCrossDomainPages && $this.is( "[rel='external']" )) ||
+					$this.is( "[rel='external']" ) ||
 					// test that the form is, itself, ajax false
 					$form.is( ":jqmData(ajax='false')" ) ||
 					// test that $.mobile.ignoreContentEnabled is set and
@@ -1026,9 +1094,21 @@ define( [
 
 			url = path.makeUrlAbsolute(  url, getClosestBaseUrl( $form ) );
 
-			if ( ( path.isExternal( url ) && !path.isPermittedCrossDomainRequest( documentUrl, url ) ) || target ) {
+			//external submits use regular HTTP
+			if( path.isExternal( url ) || target ) {
+        // GrabOne Modified
+        // to show loading message when submitting to a cross-domain url.
+        $.mobile.showPageLoadingMsg();
+        $(window).one('pagehide unload', function(){
+          $.mobile.hidePageLoadingMsg();
+        });
+        
 				return false;
 			}
+      
+      // GrabOne Modified
+      // to enable reverse direction.
+      var direction =	$this.jqmData('direction');
 
 			if ( !calculateOnly ) {
 				type = $form.attr( "method" );
@@ -1071,6 +1151,13 @@ define( [
 			var formData = getAjaxFormData( $( this ) );
 
 			if ( formData ) {
+				// GrabOne Modified
+				// to show loading message when submitting to a cross-domain url.
+				$.mobile.showPageLoadingMsg();
+				$(window).one('pagehide unload', function(){
+				  $.mobile.hidePageLoadingMsg();
+				});
+
 				$.mobile.changePage( formData.url, formData.options );
 				event.preventDefault();
 			}
@@ -1144,18 +1231,18 @@ define( [
 		});
 
 		// click routing - direct to HTTP or Ajax, accordingly
-		$.mobile.document.bind( "click", function( event ) {
-			if ( !$.mobile.linkBindingEnabled || event.isDefaultPrevented() ) {
-				return;
-			}
+		$( document ).bind( (!isiOSApp) ? "click" : "click vclick", function( event ) {
+                        if( !$.mobile.linkBindingEnabled ){
+                                return;
+                        }
 
 			var link = findClosestLink( event.target ), $link = $( link ), httpCleanup;
 
-			// If there is no link associated with the click or its not a left
-			// click we want to ignore the click
-			// TODO teach $.mobile.hijackable to operate on raw dom elements so the link wrapping
-			// can be avoided
-			if ( !link || event.which > 1 || !$link.jqmHijackable().length ) {
+                        // If there is no link associated with the click or its not a left
+                        // click we want to ignore the click
+                        // Grabone Modified
+                        // to include middle click.
+                        if ( !link || event.which > 2) {
 				return;
 			}
 
@@ -1166,11 +1253,33 @@ define( [
 
 			//if there's a data-rel=back attr, go back in history
 			if ( $link.is( ":jqmData(rel='back')" ) ) {
-				$.mobile.back();
+        // Grabone Modified
+        // to avoid going back in history twice becuase of enabling vclick.
+        if (isiOSApp) {
+          if (event.type == 'vclick') {
+            $link.data('triggered', true);
+            $.mobile.back();
+          }
+          else {
+            if ($link.data('triggered')) {
+              $link.removeData('triggered');
+            }
+            else {
+              $.mobile.back();
+            }
+          }
+        }
+        else {
+          $.mobile.back();
+        }
 				return false;
 			}
 
-			var baseUrl = getClosestBaseUrl( $link ),
+      // Grabone Modified
+      // to reduce response time
+      // assuming we always use absolute path not relative path.
+      // var baseUrl = getClosestBaseUrl( $link ),
+      var baseUrl = documentBase.hrefNoHash,
 
 				//get href, if defined, otherwise default to empty hash
 				href = path.makeUrlAbsolute( $link.attr( "href" ) || "#", baseUrl );
@@ -1223,6 +1332,19 @@ define( [
 				isExternal = useDefaultUrlHandling || ( path.isExternal( href ) && !path.isPermittedCrossDomainRequest( documentUrl, href ) );
 
 			if ( isExternal ) {
+        // GrabOne Modified
+        // to show loading message when opening a grabone cross-domain page.
+        var u = path.parseUrl(href);
+        if ((!u.protocol || u.protocol.indexOf('http') >= 0)
+            && (!u.hostname || u.hostname.indexOf('grabone') >= 0)
+            && (!u.search || u.search.indexOf('target_blank=') < 0)) {
+            
+          $.mobile.showPageLoadingMsg();
+          $(window).one('pagehide unload', function(){
+            $.mobile.hidePageLoadingMsg();
+          });
+        }
+        
 				httpCleanup();
 				//use default click handling
 				return;
@@ -1233,16 +1355,21 @@ define( [
 				reverse = $link.jqmData( "direction" ) === "reverse" ||
 							// deprecated - remove by 1.0
 							$link.jqmData( "back" ),
-
+        // Grabone Modified
+        // to be able to explicitly reload a page.
+        reloadPage = ($link.jqmData( "cache" ) === 'reload'),
+        
 				//this may need to be more specific as we use data-rel more
 				role = $link.attr( "data-" + $.mobile.ns + "rel" ) || undefined;
 
-			$.mobile.changePage( href, { transition: transition, reverse: reverse, role: role, link: $link } );
+			$.mobile.changePage( href, { transition: transition, reverse: reverse, role: role, link: $link, reloadPage: reloadPage } );
 			event.preventDefault();
 		});
 
+    // Grabone Modified
+    // to disable default prefetch mechanism.
 		//prefetch pages when anchors with data-prefetch are encountered
-		$.mobile.document.delegate( ".ui-page", "pageshow.prefetch", function() {
+		/*$.mobile.document.delegate( ".ui-page", "pageshow.prefetch", function() {
 			var urls = [];
 			$( this ).find( "a:jqmData(prefetch)" ).each(function() {
 				var $link = $( this ),
@@ -1254,7 +1381,7 @@ define( [
 					$.mobile.loadPage( url, { role: $link.attr( "data-" + $.mobile.ns + "rel" ) } );
 				}
 			});
-		});
+		});*/
 
 		$.mobile._handleHashChange = function( url, data ) {
 			//find first page via hash

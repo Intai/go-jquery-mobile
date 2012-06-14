@@ -18,7 +18,9 @@ function propExists( prop ) {
 	}
 }
 
-var fakeBody = $( "<body>" ).prependTo( "html" ),
+// GrabOne Modified
+// to avoid a flash of blank screen.
+var fakeBody = $( "<body>" ),//.prependTo( "html" ),
 	fbCSS = fakeBody[ 0 ].style,
 	vendors = [ "Webkit", "Moz", "O" ],
 	webos = "palmGetResource" in window, //only used to rule out scrollTop
