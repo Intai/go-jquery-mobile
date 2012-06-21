@@ -1316,8 +1316,10 @@ define( [
 				}
 			}
 
+        // GrabOne Modified
+        // to use jquery mobile to handle target links as there is no tab in our apps.
 				// Should we handle this link, or let the browser deal with it?
-			var useDefaultUrlHandling = $link.is( "[rel='external']" ) || $link.is( ":jqmData(ajax='false')" ) || $link.is( "[target]" ),
+			var useDefaultUrlHandling = $link.is( "[rel='external']" ) || $link.is( ":jqmData(ajax='false')" ),// || $link.is( "[target]" ),
 
 				// Some embedded browsers, like the web view in Phone Gap, allow cross-domain XHR
 				// requests if the document doing the request was loaded via the file:// protocol.
