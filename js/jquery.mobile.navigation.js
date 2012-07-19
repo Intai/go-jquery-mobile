@@ -531,6 +531,48 @@ define( [
 		if ( !( $.mobile.allowCrossDomainPages || path.isSameDomain( documentUrl, absUrl ) ) ) {
 			deferred.reject( absUrl, options );
 		} else {
+      // GrabOne Modified
+      // to be able to trigger fail form ajax success.
+      var errorCallback = function( xhr, textStatus, errorThrown ) {
+        //set base back to current path
+        if( base ) {
+          base.set( path.get() );
+        }
+
+        // Add error info to our triggerData.
+        triggerData.xhr = xhr;
+        triggerData.textStatus = textStatus;
+        triggerData.errorThrown = errorThrown;
+
+        var plfEvent = new $.Event( "pageloadfailed" );
+
+        // Let listeners know the page load failed.
+        settings.pageContainer.trigger( plfEvent, triggerData );
+
+        // If the default behavior is prevented, stop here!
+        // Note that it is the responsibility of the listener/handler
+        // that called preventDefault(), to resolve/reject the
+        // deferred object within the triggerData.
+        if( plfEvent.isDefaultPrevented() ){
+          return;
+        }
+
+        // Remove loading message.
+        if ( settings.showLoadMsg ) {
+
+          // Remove loading message.
+          hideMsg();
+
+          // show error message
+          $.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, $.mobile.pageLoadErrorMessage, true );
+
+          // hide after delay
+          setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
+        }
+
+        deferred.reject( absUrl, options );
+      };
+        
 			// Load the new page.
       // GrabOne Modified
       // to be able to abort the ajax request.
@@ -548,6 +590,12 @@ define( [
                     ? {'If-None-Match':''} 
                     : {}, //{'X-Requested-With':'XMLHttpRequest'}
 				success: function( html, textStatus, xhr ) {
+          // GrabOne Modified
+          // to workaround 304 with undefined html in mobile safari on ios 4.3.
+          if (!html) {
+            return errorCallback(xhr, 'error', 'Not Found');
+          }
+          
           // Grabone Modified
           // to workaround the limitation on redirection with cross-domain ajax.
           var matches = html.match(/^Location: (.*)/)
@@ -655,45 +703,7 @@ define( [
 
 					deferred.resolve( absUrl, options, page, dupCachedPage );
 				},
-				error: function( xhr, textStatus, errorThrown ) {
-					//set base back to current path
-					if ( base ) {
-						base.set( path.get() );
-					}
-
-					// Add error info to our triggerData.
-					triggerData.xhr = xhr;
-					triggerData.textStatus = textStatus;
-					triggerData.errorThrown = errorThrown;
-
-					var plfEvent = new $.Event( "pageloadfailed" );
-
-					// Let listeners know the page load failed.
-					settings.pageContainer.trigger( plfEvent, triggerData );
-
-					// If the default behavior is prevented, stop here!
-					// Note that it is the responsibility of the listener/handler
-					// that called preventDefault(), to resolve/reject the
-					// deferred object within the triggerData.
-					if ( plfEvent.isDefaultPrevented() ) {
-						return;
-					}
-
-					// Remove loading message.
-					if ( settings.showLoadMsg ) {
-
-						// Remove loading message.
-						hideMsg();
-
-						// show error message
-						$.mobile.showPageLoadingMsg( $.mobile.pageLoadErrorMessageTheme, $.mobile.pageLoadErrorMessage, true );
-
-						// hide after delay
-						setTimeout( $.mobile.hidePageLoadingMsg, 1500 );
-					}
-
-					deferred.reject( absUrl, options );
-				}
+				error: errorCallback
 			});
       
       if (settings.xhr) {
