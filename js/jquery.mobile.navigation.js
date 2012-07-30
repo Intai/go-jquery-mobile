@@ -84,6 +84,10 @@ define( [
     isiOSApp = (/scroller/i).test(navigator.userAgent),
     isAndroidApp = (/grabone.*android/i).test(navigator.userAgent),
 
+    // Grabone Modified
+    // to setup vclick event.
+    clickEvent = (isiOSApp) ? "click vclick" : "click",
+    
 		//define first selector to receive focus when a page is shown
 		focusable = "[tabindex],a,button:visible,select:visible,input",
 
@@ -363,6 +367,10 @@ define( [
   // to get ios app version.
   $.mobile.iOSAppVersion = iOSAppVersion;
 
+  // Grabone Modified
+  // to setup vclick event.
+  $.mobile.clickEvent = clickEvent;
+  
 	$.mobile.dialogHashKey = dialogHashKey;
 
   // Grabone Modified
@@ -1241,7 +1249,7 @@ define( [
 		});
 
 		// click routing - direct to HTTP or Ajax, accordingly
-		$( document ).bind( (!isiOSApp) ? "click" : "click vclick", function( event ) {
+		$( document ).bind( clickEvent, function( event ) {
                         if( !$.mobile.linkBindingEnabled ){
                                 return;
                         }
