@@ -542,6 +542,12 @@ define( [
       // GrabOne Modified
       // to be able to trigger fail form ajax success.
       var errorCallback = function( xhr, textStatus, errorThrown ) {
+        // GrabOne Modified
+        // to workaround error triggered when accessing offline content.
+        if (xhr.status == 0 && xhr.responseText) {
+          return successCallback(xhr.responseText, 'success', xhr);
+        }
+        
         //set base back to current path
         if( base ) {
           base.set( path.get() );
@@ -580,6 +586,118 @@ define( [
 
         deferred.reject( absUrl, options );
       };
+      
+      // GrabOne Modified
+      // to be able to trigger success form ajax error.
+      var successCallback = function( html, textStatus, xhr ) {
+        // GrabOne Modified
+        // to workaround 304 with undefined html in mobile safari on ios 4.3.
+        if (!html) {
+          return errorCallback(xhr, 'error', 'Not Found');
+        }
+
+        // Grabone Modified
+        // to workaround the limitation on redirection with cross-domain ajax.
+        var matches = html.match(/^Location: (.*)/)
+        if (matches) {
+          delete options.type;
+          delete options.data;
+          releasePageTransitionLock();
+          $.mobile.changePage(matches[1], options);
+          return;
+        }
+
+        //pre-parse html to check for a data-url,
+        //use it as the new fileUrl, base path, etc
+        var all = $( "<div></div>" ),
+
+          //page title regexp
+          newPageTitle = html.match( /<title[^>]*>([^<]*)/ ) && RegExp.$1,
+
+          // TODO handle dialogs again
+          pageElemRegex = new RegExp( "(<[^>]+\\bdata-" + $.mobile.ns + "role=[\"']?page[\"']?[^>]*>)" ),
+          dataUrlRegex = new RegExp( "\\bdata-" + $.mobile.ns + "url=[\"']?([^\"'>]*)[\"']?" );
+
+        // data-url must be provided for the base tag so resource requests can be directed to the
+        // correct url. loading into a temprorary element makes these requests immediately
+        if( pageElemRegex.test( html )
+            && RegExp.$1
+            && dataUrlRegex.test( RegExp.$1 )
+            && RegExp.$1 ) {
+          url = fileUrl = path.getFilePath( $( "<div>" + RegExp.$1 + "</div>" ).text() );
+        }
+
+        //workaround to allow scripts to execute when included in page divs
+        all.get( 0 ).innerHTML = html;
+        page = all.find( ":jqmData(role='page'), :jqmData(role='dialog')" ).first();
+
+        //if page elem couldn't be found, create one and insert the body element's contents
+        if( !page.length ){
+          page = $( "<div data-" + $.mobile.ns + "role='page'>" + ( html.split( /<\/?body[^>]*>/gmi )[1] || "" ) + "</div>" );
+        }
+
+        if ( newPageTitle && !page.jqmData( "title" ) ) {
+          if ( ~newPageTitle.indexOf( "&" ) ) {
+            newPageTitle = $( "<div>" + newPageTitle + "</div>" ).text();
+          }
+          page.jqmData( "title", newPageTitle );
+        }
+
+        //rewrite src and href attrs to use a base url
+        if( !$.support.dynamicBaseTag ) {
+          var newPath = path.get( fileUrl );
+          page.find( "[src], link[href], a[rel='external'], :jqmData(ajax='false'), a[target]" ).each(function() {
+            var thisAttr = $( this ).is( '[href]' ) ? 'href' :
+                $(this).is('[src]') ? 'src' : 'action',
+              thisUrl = $( this ).attr( thisAttr );
+
+            // XXX_jblas: We need to fix this so that it removes the document
+            //            base URL, and then prepends with the new page URL.
+            //if full path exists and is same, chop it - helps IE out
+            thisUrl = thisUrl.replace( location.protocol + '//' + location.host + location.pathname, '' );
+
+            if( !/^(\w+:|#|\/)/.test( thisUrl ) ) {
+              $( this ).attr( thisAttr, newPath + thisUrl );
+            }
+          });
+        }
+
+        //append to page and enhance
+        // TODO taging a page with external to make sure that embedded pages aren't removed
+        //      by the various page handling code is bad. Having page handling code in many
+        //      places is bad. Solutions post 1.0
+        page
+          .attr( "data-" + $.mobile.ns + "url", path.convertUrlToDataUrl( fileUrl ) )
+          .attr( "data-" + $.mobile.ns + "external-page", true )
+          .appendTo( settings.pageContainer );
+
+        // wait for page creation to leverage options defined on widget
+        page.one( 'pagecreate', $.mobile._bindPageRemove );
+
+        enhancePage( page, settings.role );
+
+        // Enhancing the page may result in new dialogs/sub pages being inserted
+        // into the DOM. If the original absUrl refers to a sub-page, that is the
+        // real page we are interested in.
+        if ( absUrl.indexOf( "&" + $.mobile.subPageUrlKey ) > -1 ) {
+          page = settings.pageContainer.children( "[data-" + $.mobile.ns +"url='" + dataUrl + "']" );
+        }
+
+        // Remove loading message.
+        if ( settings.showLoadMsg ) {
+          hideMsg();
+        }
+
+        // Add the page reference and xhr to our triggerData.
+        triggerData.xhr = xhr;
+        triggerData.textStatus = textStatus;
+        triggerData.page = page;
+
+        // Let listeners know the page loaded successfully.
+        settings.pageContainer.trigger( "pageload", triggerData );
+
+        deferred.resolve( absUrl, options, page, dupCachedPage );
+      };
         
 			// Load the new page.
       // GrabOne Modified
@@ -597,120 +715,7 @@ define( [
         headers: (settings.reloadPageServer) 
                     ? {'If-None-Match':''} 
                     : {}, //{'X-Requested-With':'XMLHttpRequest'}
-				success: function( html, textStatus, xhr ) {
-          // GrabOne Modified
-          // to workaround 304 with undefined html in mobile safari on ios 4.3.
-          if (!html) {
-            return errorCallback(xhr, 'error', 'Not Found');
-          }
-          
-          // Grabone Modified
-          // to workaround the limitation on redirection with cross-domain ajax.
-          var matches = html.match(/^Location: (.*)/)
-          if (matches) {
-            delete options.type;
-            delete options.data;
-            releasePageTransitionLock();
-            $.mobile.changePage(matches[1], options);
-            return;
-          }
-          
-					//pre-parse html to check for a data-url,
-					//use it as the new fileUrl, base path, etc
-					var all = $( "<div></div>" ),
-
-						//page title regexp
-						newPageTitle = html.match( /<title[^>]*>([^<]*)/ ) && RegExp.$1,
-
-						// TODO handle dialogs again
-						pageElemRegex = new RegExp( "(<[^>]+\\bdata-" + $.mobile.ns + "role=[\"']?page[\"']?[^>]*>)" ),
-						dataUrlRegex = new RegExp( "\\bdata-" + $.mobile.ns + "url=[\"']?([^\"'>]*)[\"']?" );
-
-
-					// data-url must be provided for the base tag so resource requests can be directed to the
-					// correct url. loading into a temprorary element makes these requests immediately
-					if ( pageElemRegex.test( html ) &&
-							RegExp.$1 &&
-							dataUrlRegex.test( RegExp.$1 ) &&
-							RegExp.$1 ) {
-						url = fileUrl = path.getFilePath( $( "<div>" + RegExp.$1 + "</div>" ).text() );
-					}
-
-					if ( base ) {
-						base.set( fileUrl );
-					}
-
-					//workaround to allow scripts to execute when included in page divs
-					all.get( 0 ).innerHTML = html;
-					page = all.find( ":jqmData(role='page'), :jqmData(role='dialog')" ).first();
-
-					//if page elem couldn't be found, create one and insert the body element's contents
-					if ( !page.length ) {
-						page = $( "<div data-" + $.mobile.ns + "role='page'>" + ( html.split( /<\/?body[^>]*>/gmi )[1] || "" ) + "</div>" );
-					}
-
-					if ( newPageTitle && !page.jqmData( "title" ) ) {
-						if ( ~newPageTitle.indexOf( "&" ) ) {
-							newPageTitle = $( "<div>" + newPageTitle + "</div>" ).text();
-						}
-						page.jqmData( "title", newPageTitle );
-					}
-
-					//rewrite src and href attrs to use a base url
-					if ( !$.support.dynamicBaseTag ) {
-						var newPath = path.get( fileUrl );
-						page.find( "[src], link[href], a[rel='external'], :jqmData(ajax='false'), a[target]" ).each(function() {
-							var thisAttr = $( this ).is( '[href]' ) ? 'href' :
-									$( this ).is( '[src]' ) ? 'src' : 'action',
-								thisUrl = $( this ).attr( thisAttr );
-
-							// XXX_jblas: We need to fix this so that it removes the document
-							//            base URL, and then prepends with the new page URL.
-							//if full path exists and is same, chop it - helps IE out
-							thisUrl = thisUrl.replace( location.protocol + '//' + location.host + location.pathname, '' );
-
-							if ( !/^(\w+:|#|\/)/.test( thisUrl ) ) {
-								$( this ).attr( thisAttr, newPath + thisUrl );
-							}
-						});
-					}
-
-					//append to page and enhance
-					// TODO taging a page with external to make sure that embedded pages aren't removed
-					//      by the various page handling code is bad. Having page handling code in many
-					//      places is bad. Solutions post 1.0
-					page
-						.attr( "data-" + $.mobile.ns + "url", path.convertUrlToDataUrl( fileUrl ) )
-						.attr( "data-" + $.mobile.ns + "external-page", true )
-						.appendTo( settings.pageContainer );
-
-					// wait for page creation to leverage options defined on widget
-					page.one( 'pagecreate', $.mobile._bindPageRemove );
-
-					enhancePage( page, settings.role );
-
-					// Enhancing the page may result in new dialogs/sub pages being inserted
-					// into the DOM. If the original absUrl refers to a sub-page, that is the
-					// real page we are interested in.
-					if ( absUrl.indexOf( "&" + $.mobile.subPageUrlKey ) > -1 ) {
-						page = settings.pageContainer.children( "[data-" + $.mobile.ns +"url='" + dataUrl + "']" );
-					}
-
-					// Remove loading message.
-					if ( settings.showLoadMsg ) {
-						hideMsg();
-					}
-
-					// Add the page reference and xhr to our triggerData.
-					triggerData.xhr = xhr;
-					triggerData.textStatus = textStatus;
-					triggerData.page = page;
-
-					// Let listeners know the page loaded successfully.
-					settings.pageContainer.trigger( "pageload", triggerData );
-
-					deferred.resolve( absUrl, options, page, dupCachedPage );
-				},
+				success: successCallback,
 				error: errorCallback
 			});
       
@@ -1116,10 +1121,12 @@ define( [
 			if( path.isExternal( url ) || target ) {
         // GrabOne Modified
         // to show loading message when submitting to a cross-domain url.
-        $.mobile.showPageLoadingMsg();
-        $(window).one('pagehide unload', function(){
-          $.mobile.hidePageLoadingMsg();
-        });
+        if (navigator.onLine) {
+          $.mobile.showPageLoadingMsg();
+          $(window).one('pagehide unload', function(){
+            $.mobile.hidePageLoadingMsg();
+          });
+        }
         
 				return false;
 			}
@@ -1169,12 +1176,14 @@ define( [
 			var formData = getAjaxFormData( $( this ) );
 
 			if ( formData ) {
-				// GrabOne Modified
-				// to show loading message when submitting to a cross-domain url.
-				$.mobile.showPageLoadingMsg();
-				$(window).one('pagehide unload', function(){
-				  $.mobile.hidePageLoadingMsg();
-				});
+	  // GrabOne Modified
+          // to show loading message when submitting to a cross-domain url.
+          if (navigator.onLine) {
+            $.mobile.showPageLoadingMsg();
+            $(window).one('pagehide unload', function(){
+              $.mobile.hidePageLoadingMsg();
+            });
+          }
 
 				$.mobile.changePage( formData.url, formData.options );
 				event.preventDefault();
@@ -1309,6 +1318,8 @@ define( [
 				return;
 			}
 
+      // GrabOne Modified
+      // to fix when there is hash in an external url.
 			// XXX_jblas: Ideally links to application pages should be specified as
 			//            an url to the application document with a hash that is either
 			//            the site relative path or id to the page. But some of the
@@ -1318,7 +1329,7 @@ define( [
 			//            the current value of the base tag is at the time this code
 			//            is called. For now we are just assuming that any url with a
 			//            hash in it is an application page reference.
-			if ( href.search( "#" ) !== -1 ) {
+			if ( !path.isExternal(href) && href.search( "#" ) != -1 ) {
 				href = href.replace( /[^#]*#/, "" );
 				if ( !href ) {
 					//link was an empty hash meant purely
@@ -1336,8 +1347,10 @@ define( [
 
         // GrabOne Modified
         // to use jquery mobile to handle target links as there is no tab in our apps.
+        // to workaround navigation for example from /cacher#/ to /cacher#/auckland. 
 				// Should we handle this link, or let the browser deal with it?
-			var useDefaultUrlHandling = $link.is( "[rel='external']" ) || $link.is( ":jqmData(ajax='false')" ),// || $link.is( "[target]" ),
+			var u = path.parseUrl($link.attr('href')),
+        useDefaultUrlHandling = ($link.is( "[rel='external']" ) || $link.is( ":jqmData(ajax='false')" )) && (u.hash == '' || location.pathname != u.pathname),// || $link.is( "[target]" ),
 
 				// Some embedded browsers, like the web view in Phone Gap, allow cross-domain XHR
 				// requests if the document doing the request was loaded via the file:// protocol.
@@ -1355,7 +1368,8 @@ define( [
         // GrabOne Modified
         // to show loading message when opening a grabone cross-domain page.
         var u = path.parseUrl(href);
-        if ((!u.protocol || u.protocol.indexOf('http') >= 0)
+        if (navigator.onLine
+            && (!u.protocol || u.protocol.indexOf('http') >= 0)
             && (!u.hostname || u.hostname.indexOf('grabone') >= 0)
             && (!u.search || u.search.indexOf('target_blank=') < 0)) {
             
