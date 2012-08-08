@@ -1509,8 +1509,12 @@ define( [
 		});
 
 		//set page min-heights to be device specific
+    // Grabone modified
+    // to speed up response time.
+    if (!isiOSApp && !isAndroidApp) {
 		$.mobile.document.bind( "pageshow", $.mobile.resetActivePageHeight );
 		$.mobile.window.bind( "throttledresize", $.mobile.resetActivePageHeight );
+    }
 
 	};//navreadyDeferred done callback
 
