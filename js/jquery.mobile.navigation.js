@@ -123,6 +123,10 @@ define( [
       iOSAppVersion = match[1];
     }
     
+    // Grabone Modified
+    // to show loading dialogue on jelly bean.
+    var isExternalDelayed = (isAndroidApp && (/android 4\.1/i).test(navigator.userAgent));
+    
 		//base element management, defined depending on dynamic base tag support
 		var base = $.support.dynamicBaseTag ? {
 
@@ -1377,6 +1381,16 @@ define( [
           $(window).one('pagehide unload', function(){
             $.mobile.hidePageLoadingMsg();
           });
+          
+          // Grabone Modified
+          // to show loading dialogue on jelly bean.
+          if (isExternalDelayed) {
+            href = $link.attr('href');
+            if (href) {
+              setTimeout(function() { window.location = href; }, 100);
+              event.preventDefault();
+            }
+          }
         }
         
 				httpCleanup();
