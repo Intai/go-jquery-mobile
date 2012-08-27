@@ -826,6 +826,12 @@ define( [
 
 					//clear out the active button state
 					removeActiveLinkClass( true );
+          
+          // Grabone Modified
+          // to avoid retrying a failed page.
+          if (pageTransitionQueue.length > 0 && toPage == pageTransitionQueue[0][0]) {
+            pageTransitionQueue.pop();
+          }
 
 					//release transition lock so navigation is free again
 					releasePageTransitionLock();
