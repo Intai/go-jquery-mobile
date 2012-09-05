@@ -124,6 +124,14 @@ define( [
     }
     
     // Grabone Modified
+    // to get android app version.
+    var androidAppVersion = 0;
+    match = navigator.userAgent.match(/^grabone mobile (\d+) .*android/i);
+    if (match && match.length > 1) {
+      androidAppVersion = match[1];
+    }
+    
+    // Grabone Modified
     // to show loading dialogue on jelly bean.
     var isExternalDelayed = (isAndroidApp && (/android 4\.1/i).test(navigator.userAgent));
     
@@ -370,6 +378,10 @@ define( [
   // Grabone Modified
   // to get ios app version.
   $.mobile.iOSAppVersion = iOSAppVersion;
+  
+  // Grabone Modified
+  // to get android app version.
+  $.mobile.androidAppVersion = androidAppVersion;
 
   // Grabone Modified
   // to setup vclick event.
