@@ -715,6 +715,16 @@ define( [
         deferred.resolve( absUrl, options, page, dupCachedPage );
       };
         
+      // GrabOne Modified
+      // to ensure a fresh response from server.
+      var headers = {};
+      if (settings.reloadPageServer) {
+        headers['If-None-Match'] = '';
+      }
+      if (settings.reloadPageServerAt) {
+        headers['Invalidate-Before'] = settings.reloadPageServerAt;
+      }
+      
 			// Load the new page.
       // GrabOne Modified
       // to be able to abort the ajax request.
@@ -728,9 +738,7 @@ define( [
         entirePage: true,
         // GrabOne Modified
         // to ensure a fresh response from server.
-        headers: (settings.reloadPageServer) 
-                    ? {'If-None-Match':''} 
-                    : {}, //{'X-Requested-With':'XMLHttpRequest'}
+        headers: headers, //{'X-Requested-With':'XMLHttpRequest'}
 				success: successCallback,
 				error: errorCallback
 			});
