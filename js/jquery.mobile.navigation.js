@@ -124,6 +124,14 @@ define( [
     }
     
     // Grabone Modified
+    // to get iphone os version.
+    var iPhoneOSVersion = 0;
+    match = navigator.userAgent.match(/iphone.*version\/(\d[^\s]+)/i);
+    if (match && match.length > 1) {
+      iPhoneOSVersion = match[1];
+    }
+    
+    // Grabone Modified
     // to get android app version.
     var androidAppVersion = 0;
     match = navigator.userAgent.match(/^grabone mobile (\d+) .*android/i);
@@ -378,6 +386,10 @@ define( [
   // Grabone Modified
   // to get ios app version.
   $.mobile.iOSAppVersion = iOSAppVersion;
+  
+  // Grabone Modified
+  // to get iphone os version.
+  $.mobile.iPhoneOSVersion = iPhoneOSVersion;
   
   // Grabone Modified
   // to get android app version.
@@ -1404,7 +1416,7 @@ define( [
             && (!u.search || u.search.indexOf('target_blank=') < 0)) {
             
           $.mobile.showPageLoadingMsg();
-          $(window).one('pagehide unload', function(){
+          $(window).one('pagehide focusout unload', function(){
             $.mobile.hidePageLoadingMsg();
           });
           
