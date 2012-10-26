@@ -126,7 +126,7 @@ define( [
     // Grabone Modified
     // to get iphone os version.
     var iPhoneOSVersion = 0;
-    match = navigator.userAgent.match(/iphone.*version\/(\d[^\s]+)/i);
+    match = navigator.userAgent.match(/iphone os (\d+)/i);
     if (match && match.length > 1) {
       iPhoneOSVersion = match[1];
     }
@@ -1416,7 +1416,7 @@ define( [
             && (!u.search || u.search.indexOf('target_blank=') < 0)) {
             
           $.mobile.showPageLoadingMsg();
-          $(window).one('pagehide focusout unload', function(){
+          $(window).one('pagehide unload', function(){
             $.mobile.hidePageLoadingMsg();
           });
           
