@@ -1218,13 +1218,20 @@ define( [
 			var formData = getAjaxFormData( $( this ) );
 
 			if ( formData ) {
-	  // GrabOne Modified
+          // GrabOne Modified
           // to show loading message when submitting to a cross-domain url.
           if (navigator.onLine) {
             $.mobile.showPageLoadingMsg();
             $(window).one('pagehide unload', function(){
               $.mobile.hidePageLoadingMsg();
             });
+
+            // Grabone Modified
+            // to show loading dialogue on jelly bean.
+            if (isExternalDelayed && event.originalEvent) {
+              setTimeout(function() { $this.submit(); }, 100);
+              event.preventDefault();
+            }
           }
 
 				$.mobile.changePage( formData.url, formData.options );
@@ -1322,6 +1329,15 @@ define( [
 
 			//if there's a data-rel=back attr, go back in history
 			if ( $link.is( ":jqmData(rel='back')" ) ) {
+        // GrabOne Modified
+        // to show loading message when going back in history.
+        if (navigator.onLine) {
+          $.mobile.showPageLoadingMsg();
+          $(window).one('pagehide unload', function(){
+            $.mobile.hidePageLoadingMsg();
+          });
+        }
+        
         // Grabone Modified
         // to avoid going back in history twice becuase of enabling vclick.
         if (isiOSApp) {
