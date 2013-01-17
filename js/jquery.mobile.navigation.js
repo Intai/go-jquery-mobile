@@ -689,6 +689,12 @@ define( [
             }
           });
         }
+        
+        // GrabOne Modified
+        // to mark the page after reloaded.
+        if (settings.reloadPageServer) {
+          page.attr('data-reloaded', true);
+        }
 
         //append to page and enhance
         // TODO taging a page with external to make sure that embedded pages aren't removed
