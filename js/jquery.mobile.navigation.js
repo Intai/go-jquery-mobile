@@ -132,6 +132,14 @@ define( [
     }
     
     // Grabone Modified
+    // to get ipad os version.
+    var iPadOSVersion = 0;
+    match = navigator.userAgent.match(/ipad; cpu os (\d+)/i);
+    if (match && match.length > 1) {
+      iPadOSVersion = match[1];
+    }
+    
+    // Grabone Modified
     // to get android app version.
     var androidAppVersion = 0;
     match = navigator.userAgent.match(/^grabone mobile (\d+) .*android/i);
@@ -390,6 +398,14 @@ define( [
   // Grabone Modified
   // to get iphone os version.
   $.mobile.iPhoneOSVersion = iPhoneOSVersion;
+  
+  // Grabone Modified
+  // to get ipad os version.
+  $.mobile.iPadOSVersion = iPadOSVersion;
+  
+  // Grabone Modified
+  // to get ios version.
+  $.mobile.iOSVersion = iPhoneOSVersion || iPadOSVersion;
   
   // Grabone Modified
   // to get android app version.
