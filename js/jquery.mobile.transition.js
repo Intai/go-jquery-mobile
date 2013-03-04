@@ -23,9 +23,11 @@ var createHandler = function( sequential ) {
 			active	= $.mobile.urlHistory.getActive(),
 			toScroll = active.lastScroll || $.mobile.defaultHomeScroll,
 			screenHeight = $.mobile.getScreenHeight(),
-			maxTransitionOverride = $.mobile.maxTransitionWidth !== false && $.mobile.window.width() > $.mobile.maxTransitionWidth,
-			none = !$.support.cssTransitions || maxTransitionOverride || !name || name === "none" || Math.max( $.mobile.window.scrollTop(), toScroll ) > $.mobile.getMaxScrollForTransition(),
-			toPreClass = " ui-page-pre-in",
+      // Grabone Modified
+      // to reduce response time.
+			//maxTransitionOverride = $.mobile.maxTransitionWidth !== false && $.mobile.window.width() > $.mobile.maxTransitionWidth,
+			none = !$.support.cssTransitions /*|| maxTransitionOverride*/ || !name || name === "none" /*|| Math.max( $.mobile.window.scrollTop(), toScroll ) > $.mobile.getMaxScrollForTransition()*/,
+			//toPreClass = " ui-page-pre-in",
 			toggleViewportClass = function() {
 				$.mobile.pageContainer.toggleClass( "ui-mobile-viewport-transitioning viewport-" + name );
 			},
@@ -44,7 +46,9 @@ var createHandler = function( sequential ) {
 			cleanFrom = function() {
 				$from
 					.removeClass( $.mobile.activePageClass + " out in reverse " + name )
-					.height( "" );
+          // Grabone Modified
+          // to reduce response time.
+					;//.height( "" );
 			},
 			startOut = function() {
 				// if it's not sequential, call the doneOut transition to start the TO page animating in simultaneously
@@ -57,8 +61,9 @@ var createHandler = function( sequential ) {
 
 				// Set the from page's height and start it transitioning out
 				// Note: setting an explicit height helps eliminate tiling in the transitions
-				$from
-					.height( screenHeight + $.mobile.window.scrollTop() )
+        // Grabone Modified
+        // to reduce response time.
+				$from//.height( screenHeight + $.mobile.window.scrollTop() )
 					.addClass( name + " out" + reverseClass );
 			},
 
@@ -74,27 +79,40 @@ var createHandler = function( sequential ) {
 			startIn = function() {
 
 				// Prevent flickering in phonegap container: see comments at #4024 regarding iOS
-				$to.css( "z-index", -10 );
+        // Grabone Modified
+        // to reduce response time.
+				//$to.css( "z-index", -10 );
 
-				$to.addClass( $.mobile.activePageClass + toPreClass );
+        // Set to page height
+				$to.height( screenHeight + toScroll );
+        
+        // Grabone Modified
+        // to reduce response time.
+				$to.addClass( $.mobile.activePageClass /*+ toPreClass*/ );
 
 				// Send focus to page as it is now display: block
-				$.mobile.focusPage( $to );
+        // Grabone Modified
+        // to reduce response time.
+				//$.mobile.focusPage( $to );
 
-				// Set to page height
-				$to.height( screenHeight + toScroll );
-
-				scrollPage();
+        // Grabone Modified
+        // to reduce response time.
+        if (!$.mobile.isiOSApp) {
+          scrollPage();
+        }
 
 				// Restores visibility of the new page: added together with $to.css( "z-index", -10 );
-				$to.css( "z-index", "" );
+        // Grabone Modified
+        // to reduce response time.
+				//$to.css( "z-index", "" );
 
 				if ( !none ) {
 					$to.animationComplete( doneIn );
 				}
 
-				$to
-					.removeClass( toPreClass )
+        // Grabone Modified
+        // to reduce response time.
+				$to//.removeClass( toPreClass )
 					.addClass( name + " in" + reverseClass );
 
 				if ( none ) {
@@ -120,9 +138,11 @@ var createHandler = function( sequential ) {
 
 				// In some browsers (iOS5), 3D transitions block the ability to scroll to the desired location during transition
 				// This ensures we jump to that spot after the fact, if we aren't there already.
-				if ( $.mobile.window.scrollTop() !== toScroll ) {
+        // Grabone Modified
+        // to reduce response time.
+				/*if ( $.mobile.window.scrollTop() !== toScroll ) {
 					scrollPage();
-				}
+				}*/
 
 				deferred.resolve( name, reverse, $to, $from, true );
 			};

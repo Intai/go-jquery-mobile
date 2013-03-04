@@ -47,9 +47,11 @@ define([
 				return;
 			}
 
-			if( event.historyState ){
+      // GrabOne Modified
+      // to avoid automatic navigation when page is loaded.
+			/*if( event.historyState ){
 				$.extend(state, event.historyState);
-			}
+			}*/
 
 			// Make sure the original event is tracked for the end
 			// user to inspect incase they want to do something special

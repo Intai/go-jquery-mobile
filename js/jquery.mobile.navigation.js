@@ -1149,8 +1149,8 @@ define( [
 			if ( !$.mobile.ajaxEnabled ||
 					// Grabone Modified
 					// to enable cross-domain ajax.
-					// (!$.mobile.allowCrossDomainPages && $this.is( "[rel='external']" )) ||
-					$this.is( "[rel='external']" ) ||
+					// (!$.mobile.allowCrossDomainPages && $form.is( "[rel='external']" )) ||
+					$form.is( "[rel='external']" ) ||
 					// test that the form is, itself, ajax false
 					$form.is( ":jqmData(ajax='false')" ) ||
 					// test that $.mobile.ignoreContentEnabled is set and
@@ -1240,25 +1240,27 @@ define( [
 			var formData = getAjaxFormData( $( this ) );
 
 			if ( formData ) {
-          // GrabOne Modified
-          // to show loading message when submitting to a cross-domain url.
-          if (navigator.onLine) {
-            $.mobile.showPageLoadingMsg();
-            $(window).one('pagehide unload', function(){
-              $.mobile.hidePageLoadingMsg();
-            });
-
-            // Grabone Modified
-            // to show loading dialogue on jelly bean.
-            if (isExternalDelayed && event.originalEvent) {
-              setTimeout(function() { $this.submit(); }, 100);
-              event.preventDefault();
-            }
-          }
-
 				$.mobile.changePage( formData.url, formData.options );
 				event.preventDefault();
 			}
+      else {
+        // GrabOne Modified
+        // to show loading message when submitting to a cross-domain url.
+        if (navigator.onLine) {
+          $.mobile.showPageLoadingMsg();
+          $(window).one('pagehide unload', function(){
+            $.mobile.hidePageLoadingMsg();
+          });
+
+          // Grabone Modified
+          // to show loading dialogue on jelly bean.
+          if (isExternalDelayed && event.originalEvent) {
+            var $this = $(this);
+            setTimeout(function() { $this.submit(); }, 100);
+            event.preventDefault();
+          }
+        }
+      }
 		});
 
 		//add active state on vclick
@@ -1601,9 +1603,14 @@ define( [
 		//set page min-heights to be device specific
     // Grabone modified
     // to speed up response time.
-    if (!isiOSApp && !isAndroidApp) {
-		$.mobile.document.bind( "pageshow", $.mobile.resetActivePageHeight );
-		$.mobile.window.bind( "throttledresize", $.mobile.resetActivePageHeight );
+    if (!isiOSApp || iPadOSVersion) {
+      $.mobile.document.bind( "pageshow", $.mobile.resetActivePageHeight );
+      $.mobile.window.bind( "throttledresize", $.mobile.resetActivePageHeight );
+    }
+    else {
+      $.mobile.document.bind( "pagecreate", function(e) {
+        $(e.target).css( "min-height", getScreenHeight());
+      });
     }
 
 	};//navreadyDeferred done callback

@@ -228,7 +228,9 @@ var attachEvents = function() {
 				isTouchEvent = event.originalEvent && /^touch/.test( event.originalEvent.type ),
 				evt = event.type;
 
-			if ( $btn.length ) {
+      // Grabone Modified
+      // to reduce response time.
+			if ( !isTouchEvent && $btn.length ) {
 				theme = $btn.attr( "data-" + $.mobile.ns + "theme" );
 
 				if ( evt === "vmousedown" ) {
@@ -246,8 +248,8 @@ var attachEvents = function() {
 					updateButtonClass( $btn, "ui-btn-down-" + theme, "ui-btn-up-" + theme, undefined, "up" );
 				} else if ( evt === "vmouseover" || evt === "focus" ) {
 					if ( isTouchEvent ) {
-                                                // Grabone Modified
-                                                // to disable touch highlight.
+            // Grabone Modified
+            // to disable touch highlight.
 						// Use a short delay to determine if the user is scrolling before highlighting
 						/*foc = setTimeout( function() {
 							updateButtonClass( $btn, "ui-btn-up-" + theme, "ui-btn-hover-" + theme, true, "" );
@@ -257,6 +259,7 @@ var attachEvents = function() {
 					}
 				} else if ( evt === "vmouseout" || evt === "blur" || evt === "scrollstart" ) {
 					updateButtonClass( $btn, "ui-btn-hover-" + theme  + " ui-btn-down-" + theme, "ui-btn-up-" + theme, false, "up" );
+
 					// Grabone Modified
 					// to disable touch highlight.
 					/*if ( hov ) {
@@ -267,13 +270,16 @@ var attachEvents = function() {
 					}*/
 				}
 			}
-		},
+    }
+    // Grabone Modified
+		// to reduce response time.
+    /*,
 		"focusin focus": function( event ) {
 			$( closestEnabledButton( event.target ) ).addClass( $.mobile.focusClass );
 		},
 		"focusout blur": function( event ) {
 			$( closestEnabledButton( event.target ) ).removeClass( $.mobile.focusClass );
-		}
+		}*/
 	});
 
 	attachEvents = null;

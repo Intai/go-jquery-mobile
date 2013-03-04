@@ -32,7 +32,7 @@ define( [ "jquery", "./jquery.mobile.ns", "text!../version.txt" ], function( jQu
 		activeBtnClass: "ui-btn-active",
 
 		// Class used for "focus" form element state, from CSS framework
-		focusClass: "ui-focus",
+		focusClass: "",
 
 		// Automatically handle clicks and form submissions through Ajax, when same-domain
 		ajaxEnabled: true,
@@ -44,7 +44,7 @@ define( [ "jquery", "./jquery.mobile.ns", "text!../version.txt" ], function( jQu
 		linkBindingEnabled: true,
 
 		// Set default page transition - 'none' for no transitions
-		defaultPageTransition: "fade",
+		defaultPageTransition: "slide",
 
 		// Set maximum window width for transitions to apply - 'false' for no limit
 		maxTransitionWidth: false,

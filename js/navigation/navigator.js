@@ -158,7 +158,9 @@ define(["jquery",
 		//
 		// TODO grab the original event here and use it for the synthetic event in the
 		//      second half of the navigate execution that will follow this binding
-		popstate: function( event ) {
+    // GrabOne Modified
+    // to avoid automatic navigation when page is loaded.
+		/*popstate: function( event ) {
 			var active, hash, state, closestIndex;
 
 			// Partly to support our test suite which manually alters the support
@@ -231,7 +233,7 @@ define(["jquery",
 					event.historyState.direction = direction;
 				}
 			});
-		},
+		},*/
 
 		// NOTE must bind before `navigate` special event hashchange binding otherwise the
 		//      navigation data won't be attached to the hashchange event in time for those
