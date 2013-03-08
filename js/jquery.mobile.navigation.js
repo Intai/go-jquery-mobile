@@ -1194,10 +1194,6 @@ define( [
         
 				return false;
 			}
-      
-      // GrabOne Modified
-      // to enable reverse direction.
-      var direction =	$this.jqmData('direction');
 
 			if ( !calculateOnly ) {
 				type = $form.attr( "method" );
