@@ -149,7 +149,7 @@ define( [
     
     // Grabone Modified
     // to show loading dialogue on jelly bean.
-    var isExternalDelayed = (isAndroidApp && (/android 4\.1/i).test(navigator.userAgent));
+    var isExternalDelayed = (isAndroidApp && (/android 4\./i).test(navigator.userAgent));
     
 		//base element management, defined depending on dynamic base tag support
 		var base = $.support.dynamicBaseTag ? {
