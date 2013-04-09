@@ -44,7 +44,9 @@ define( [ "jquery", "../jquery.mobile.vmouse", "../jquery.mobile.support.touch" 
 		enabled: true,
 
 		setup: function() {
-
+      // Grabone Modified
+      // to reduce response time.
+      if (!$.mobile.isiOSApp) {
 			var thisObject = this,
 				$this = $( thisObject ),
 				scrolling,
@@ -71,6 +73,7 @@ define( [ "jquery", "../jquery.mobile.vmouse", "../jquery.mobile.support.touch" 
 					trigger( event, false );
 				}, 50 );
 			});
+      }
 		}
 	};
 

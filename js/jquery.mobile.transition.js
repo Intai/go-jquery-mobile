@@ -21,7 +21,9 @@ var createHandler = function( sequential ) {
 		var deferred = new $.Deferred(),
 			reverseClass = reverse ? " reverse" : "",
 			active	= $.mobile.urlHistory.getActive(),
-			toScroll = active.lastScroll || $.mobile.defaultHomeScroll,
+      // Grabone Modified
+      // to remember the scroll position
+			toScroll = $to.data('lastScroll') || $.mobile.defaultHomeScroll,
 			screenHeight = $.mobile.getScreenHeight(),
       // Grabone Modified
       // to reduce response time.

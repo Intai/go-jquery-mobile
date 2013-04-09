@@ -231,6 +231,9 @@ define( [
 		}
 	}
 
+  // Grabone Modified
+  // to reduce response time.
+  if (!$.mobile.isiOSApp) {
 	// Save the last scroll distance per page, before it is hidden
 	var setLastScrollEnabled = true,
 		setLastScroll, delayedSetLastScroll;
@@ -250,6 +253,11 @@ define( [
 			// Set active page's lastScroll prop.
 			// If the location we're scrolling to is less than minScrollBack, let it go.
 			active.lastScroll = lastScroll < $.mobile.minScrollBack ? $.mobile.defaultHomeScroll : lastScroll;
+      // Grabone Modified
+      // to remember the scroll position
+      if ($.mobile.activePage) {
+        $.mobile.activePage.data('lastScroll', lastScroll);
+      }
 		}
 	};
 
@@ -293,7 +301,8 @@ define( [
 
 	// bind to scrollstop for the first page as "pagechange" won't be fired in that case
 	$window.bind( "scrollstop", delayedSetLastScroll );
-
+  }
+  
 	// No-op implementation of transition degradation
 	$.mobile._maybeDegradeTransition = $.mobile._maybeDegradeTransition || function( transition ) {
 		return transition;
