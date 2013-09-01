@@ -1530,7 +1530,10 @@ define( [
 				};
 
 			$.extend( changePageOptions, data, {
-				transition: (urlHistory.getLast() || {}).transition || transition
+        // GrabOne Modified
+        // to disable transition when navigating back and forth in history.
+				// transition: (urlHistory.getLast() || {}).transition || transition
+        transition: 'none'
 			});
 
 			// special case for dialogs
